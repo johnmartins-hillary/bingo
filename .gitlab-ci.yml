@@ -1,0 +1,91 @@
+stages:
+  - build
+  - develop
+  - staging
+  - main
+variables:
+  CI: "false"
+
+builddevelop:
+  stage: build
+  image: node:20
+  script:
+    - rm -rf node-modules
+    - cat $ENV_DEV > .env
+    - yarn
+    - yarn run build
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - dist
+  only:
+    - develop
+
+buildstaging:
+  stage: build
+  image: node:20
+  script:
+    - rm -rf node-modules
+    - cat $ENV_STAGING > .env
+    - yarn
+    - yarn run build
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - dist
+  only:
+    - staging
+
+buildmain:
+  stage: build
+  image: node:20
+  script:
+    - rm -rf node-modules
+    - cat $ENV_DEV > .env
+    - yarn
+    - yarn run build
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - dist
+  only:
+    - main
+
+develop:
+  only:
+    refs:
+      - develop
+  stage: develop
+  script:
+    - cat $SSH_VM_PRIVATE_KEY > id_rsa
+    - chmod -R 600 id_rsa
+    - ls && scp -i id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r dist/* $VM_USER@$VM_ADDRESS:/var/www/user.dev.intasida.com
+  artifacts:
+    paths:
+      - dist
+
+staging:
+  only:
+    refs:
+      - staging
+  stage: staging
+  script:
+    - cat $SSH_VM_PRIVATE_KEY > id_rsa
+    - chmod -R 600 id_rsa
+    - ls && scp -i id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r dist/* $VM_USER@$VM_ADDRESS:/var/www/user.staging.intasida.com
+  artifacts:
+    paths:
+      - dist
+
+main:
+  only:
+    refs:
+      - main
+  stage: main
+  script:
+    - cat $SSH_VM_PRIVATE_KEY > id_rsa
+    - chmod -R 600 id_rsa
+    - ls && scp -i id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r dist/* $VM_USER@$VM_ADDRESS:/var/www/user.intasida.com
+  artifacts:
+    paths:
+      - dist
